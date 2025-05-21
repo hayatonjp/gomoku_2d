@@ -1,122 +1,87 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MyApp()); // MyAppを起動
 }
 
+// アプリの全体を動かすWidget
 class MyApp extends StatelessWidget {
+  // super.key: 親クラスである StatelessWidget に Key を渡している。Flutterの差分描画に使われる
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
+  // Flutterで全てのUIは build() メソッドの中で構築される
+  // context は、親ウィジェットの情報やテーマへのアクセスに使う
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: '2D Gomoku', // アプリのタイトル
+      home: const GomokuBoard(), // アプリ起動時に最初に表示する画面を指定
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+// 状態（盤面、ターン）を持つので、StatefulWidgetを使用
+// State<GomokuBoard> が実際の状態管理とUI構築を行う
+class GomokuBoard extends StatefulWidget {
+  const GomokuBoard({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<GomokuBoard> createState() => _GomokuBoardState(); // このWidgetに対応するStateクラスを返す
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+// 最初にアンダーバーつけるとprivateなクラスになる
+class _GomokuBoardState extends State<GomokuBoard> {
+  static const int boardSize = 9; // 盤面のサイズ（9×9）
+  List<List<String>> board = List.generate(boardSize, (_) => List.filled(boardSize, '')); // 盤面の状態（空文字''、'●'、'○'）を格納する2次元配列
+  bool isBlackTurn = true; // 黒番か白番か（trueなら黒）
 
-  void _incrementCounter() {
+  // マスをタップしたときの処理
+  void handleTap(int row, int col) {
+    if (board[row][col] != '') return; // すでに置かれていたら無視
+
+    // ● と ○ が交互に置かれるようになっている
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      board[row][col] = isBlackTurn ? '●' : '○';
+      isBlackTurn = !isBlackTurn;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('五目並べ（2D）'),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+          mainAxisAlignment: MainAxisAlignment.center, // MainAxisAlignment: ウィジェットの並び方（レイアウト）を制御するための定数の1つ
+          children: List.generate(boardSize, (row) { // 盤面の表示（UI）
+            // Column の中に Row を並べて盤面（2次元）を構築
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(boardSize, (col) {
+                return GestureDetector( // GestureDetector: タップ・長押し・スワイプなどのユーザー操作（ジェスチャー）を検出するためのウィジェット
+                  onTap: () => handleTap(row, col),
+                  // 各マスは Container で表示され、タップ可能にするために GestureDetector で包んでいる
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    margin: const EdgeInsets.all(2), // EdgeInsets: 余白（padding や margin）を設定するためのクラス
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text( // 中には Text で '●' または '○' を表示
+                      board[row][col],
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                );
+              }),
+            );
+          }),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
