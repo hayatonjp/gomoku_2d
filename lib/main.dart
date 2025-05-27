@@ -42,8 +42,60 @@ class _GomokuBoardState extends State<GomokuBoard> {
     // ● と ○ が交互に置かれるようになっている
     setState(() {
       board[row][col] = isBlackTurn ? '●' : '○';
-      isBlackTurn = !isBlackTurn;
+      if (checkWin(row, col)) {
+        // 勝利したら表示
+        final winner = isBlackTurn ? '黒' : '白';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$winner の勝ち！')),
+        );
+      } else {
+        isBlackTurn = !isBlackTurn;
+      }
     });
+  }
+
+  bool checkWin(int row, int col) {
+    final String currentStone = board[row][col];
+
+    // 方向ごとにチェック（横, 縦, 斜め↘︎, 斜め↙︎）
+    return checkDirection(row, col, 0, 1, currentStone) || // 横方向
+          checkDirection(row, col, 1, 0, currentStone) || // 縦方向
+          checkDirection(row, col, 1, 1, currentStone) || // 右下斜め ↘︎
+          checkDirection(row, col, 1, -1, currentStone);  // 左下斜め ↙︎
+  }
+
+  // ある方向に何個連続しているか調べる（dirRow, dirColで方向を指定）
+  bool checkDirection(int row, int col, int dirRow, int dirCol, String stone) {
+    int count = 1;
+
+    // 前方向
+    for (int i = 1; i < 5; i++) {
+      int newRow = row + dirRow * i;
+      int newCol = col + dirCol * i;
+      if (isInsideBoard(newRow, newCol) && board[newRow][newCol] == stone) {
+        count++;
+      } else {
+        break;
+      }
+    }
+
+    // 逆方向
+    for (int i = 1; i < 5; i++) {
+      int newRow = row - dirRow * i;
+      int newCol = col - dirCol * i;
+      if (isInsideBoard(newRow, newCol) && board[newRow][newCol] == stone) {
+        count++;
+      } else {
+        break;
+      }
+    }
+
+    return count >= 5;
+  }
+
+  // ボード内かどうかを判定
+  bool isInsideBoard(int row, int col) {
+    return row >= 0 && row < boardSize && col >= 0 && col < boardSize;
   }
 
   @override
