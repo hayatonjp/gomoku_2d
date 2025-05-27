@@ -34,10 +34,11 @@ class _GomokuBoardState extends State<GomokuBoard> {
   static const int boardSize = 9; // 盤面のサイズ（9×9）
   List<List<String>> board = List.generate(boardSize, (_) => List.filled(boardSize, '')); // 盤面の状態（空文字''、'●'、'○'）を格納する2次元配列
   bool isBlackTurn = true; // 黒番か白番か（trueなら黒）
+  bool isGameOver = false; // ゲーム終了フラグ
 
   // マスをタップしたときの処理
   void handleTap(int row, int col) {
-    if (board[row][col] != '') return; // すでに置かれていたら無視
+    if (board[row][col] != '' || isGameOver) return; // すでに置かれていたら無視
 
     // ● と ○ が交互に置かれるようになっている
     setState(() {
@@ -45,6 +46,7 @@ class _GomokuBoardState extends State<GomokuBoard> {
       if (checkWin(row, col)) {
         // 勝利したら表示
         final winner = isBlackTurn ? '黒' : '白';
+        isGameOver = true;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$winner の勝ち！')),
         );
@@ -93,6 +95,14 @@ class _GomokuBoardState extends State<GomokuBoard> {
     return count >= 5;
   }
 
+  void resetGame() {
+    setState(() {
+      board = List.generate(boardSize, (_) => List.filled(boardSize, ''));
+      isBlackTurn = true;
+      isGameOver = false;
+    });
+  }
+
   // ボード内かどうかを判定
   bool isInsideBoard(int row, int col) {
     return row >= 0 && row < boardSize && col >= 0 && col < boardSize;
@@ -103,6 +113,12 @@ class _GomokuBoardState extends State<GomokuBoard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('五目並べ（2D）'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: resetGame,
+            ),
+          ],
       ),
       body: Center(
         child: Column(
